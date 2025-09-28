@@ -1,0 +1,45 @@
+# ## Vercel / Next.js
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# Build artifacts
+/.next/
+/out/
+/build
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Local Environment Variables
+# Never commit secrets!
+.env.local
+.env.*.local
+.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDE / Editor Config
+.vscode/
+.idea/
+
+# Monorepo Tools (good for future-proofing)
+.turbo/
+
+# Testing
+/coverage
+
+# Misc
+.DS_Store
+*.pem

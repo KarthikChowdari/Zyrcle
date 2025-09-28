@@ -1,0 +1,59 @@
+{
+  "database_name": "CircularMetal Custom LCI - Copper",
+  "version": "1.1.0",
+  "description": "Curated LCI data for copper production. Contains high-level processes for quick comparison and granular unit processes for custom project modeling.",
+  "processes": [
+    {
+      "process_id": "CU_CATHODE_PRIMARY_V1",
+      "name": "Primary Copper Cathode",
+      "description": "Cradle-to-gate production of 1kg of primary copper cathode from ore concentrate. Use for Quick Compare.",
+      "unit": "kg",
+      "gCO2_per_kg": 1400,
+      "energy_kWh_per_kg": 10.0,
+      "transport_gCO2_per_kg": 65,
+      "source_citation": "Aggregated from International Copper Association (ICA) reports and Ecoinvent averages. gCO2_per_kg for direct smelting/refining emissions."
+    },
+    {
+      "process_id": "CU_CATHODE_RECYCLED_V1",
+      "name": "Recycled Copper Cathode",
+      "description": "Cradle-to-gate production of 1kg of recycled (secondary) copper cathode from high-grade scrap. Use for Quick Compare.",
+      "unit": "kg",
+      "gCO2_per_kg": 400,
+      "energy_kWh_per_kg": 2.0,
+      "transport_gCO2_per_kg": 65,
+      "source_citation": "Based on ~80% energy savings principle vs primary (ICA). gCO2_per_kg for direct remelting/refining emissions."
+    },
+    {
+      "process_id": "CU_SMELTING_PYRO_V1",
+      "name": "Unit Process: Copper Pyrometallurgical Smelting",
+      "description": "Unit process for smelting and refining 1kg of copper concentrate into cathode.",
+      "unit": "kg",
+      "gCO2_per_kg": 1350,
+      "energy_kWh_per_kg": 9.2,
+      "transport_gCO2_per_kg": 0,
+      "source_citation": "Disaggregated from ICA reports. Assumes transport is handled in raw material acquisition."
+    },
+    {
+      "process_id": "CU_ROLLING_HOT_V1",
+      "name": "Unit Process: Copper Hot Rolling",
+      "description": "Unit process for hot rolling 1kg of copper billet into sheet or plate.",
+      "unit": "kg",
+      "gCO2_per_kg": 130,
+      "energy_kWh_per_kg": 1.5,
+      "transport_gCO2_per_kg": 0,
+      "source_citation": "Based on industry averages for forming processes."
+    },
+    {
+      "process_id": "CU_EOL_RECYCLING_PROCESS_V1",
+      "name": "End-of-Life: Collection & Recycling",
+      "description": "Process for collecting, sorting, and processing 1kg of post-consumer copper scrap.",
+      "unit": "kg of scrap",
+      "gCO2_per_kg": 120,
+      "energy_kWh_per_kg": 0.2,
+      "transport_gCO2_per_kg": 30,
+      "end_of_life_yield_percent": 85,
+      "material_loss_percent": 15,
+      "source_citation": "Illustrative data based on ICA reports. Defines the yield of the EoL pathway."
+    }
+  ]
+}

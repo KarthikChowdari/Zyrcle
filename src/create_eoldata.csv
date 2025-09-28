@@ -1,0 +1,19 @@
+material,product_type,region,recycling_rate
+Aluminium,Automotive Components,EU,0.95
+Aluminium,Building Construction,EU,0.92
+Aluminium,Beverage Can,EU,0.76
+Aluminium,Packaging Foil,EU,0.60
+Aluminium,Automotive Components,NA,0.90
+Aluminium,Beverage Can,NA,0.65
+Aluminium,Cookware,IN,0.85
+Aluminium,Packaging Foil,IN,0.35
+Aluminium,Building Construction,SEA,0.70
+Copper,Industrial Cable,EU,0.90
+Copper,Electronics (PCB),EU,0.65
+Copper,Industrial Cable,NA,0.85
+Copper,Building Construction,IN,0.92
+Copper,Cookware,IN,0.88
+Copper,Electronics (PCB),IN,0.55
+Copper,Industrial Cable,SEA,0.75
+Copper,Electronics (PCB),SEA,0.40
+Aluminium,Beverage Can,SEA,0.50

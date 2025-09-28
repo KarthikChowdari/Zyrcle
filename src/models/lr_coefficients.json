@@ -1,0 +1,18 @@
+{
+  "model_name": "EnergyIntensity_vs_RecycledContent_LinearRegression",
+  "model_type": "Linear Regression",
+  "version": "1.1",
+  "description": "Predicts energy_kWh_per_kg for a given metal based on the percentage of recycled content. Formula: y = slope * x + intercept.",
+  "features": ["recycledContent", "material"],
+  "target": "energy_kWh_per_kg",
+  "coefficients": {
+    "Aluminium": {
+      "slope": -0.1472,
+      "intercept": 15.5
+    },
+    "Copper": {
+      "slope": -0.08,
+      "intercept": 10.0
+    }
+  }
+}

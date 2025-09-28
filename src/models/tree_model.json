@@ -1,0 +1,38 @@
+{
+  "feature": "product_type_Packaging Foil",
+  "threshold": 0.5,
+  "left": {
+    "feature": "product_type_Electronics (PCB)",
+    "threshold": 0.5,
+    "left": {
+      "feature": "product_type_Beverage Can",
+      "threshold": 0.5,
+      "left": {
+        "value": 0.862
+      },
+      "right": {
+        "value": 0.6367
+      }
+    },
+    "right": {
+      "feature": "region_SEA",
+      "threshold": 0.5,
+      "left": {
+        "value": 0.6
+      },
+      "right": {
+        "value": 0.4
+      }
+    }
+  },
+  "right": {
+    "feature": "region_EU",
+    "threshold": 0.5,
+    "left": {
+      "value": 0.35
+    },
+    "right": {
+      "value": 0.6
+    }
+  }
+}
