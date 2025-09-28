@@ -14,6 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import type { ReportConfig, ProjectSummary, ReportGenerationRequest, ReportGenerationResponse } from "@/lib/report-types";
 import { downloadUtils } from "@/lib/download-utils";
 
@@ -181,18 +189,22 @@ export default function GenerateReportPage() {
     <div className="min-h-screen bg-[#f8f3e6]">
       {/* Header */}
       <header className="border-b bg-white sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Button>
-          </Link>
+        <div className="container mx-auto px-4 py-4 space-y-2">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/">Home</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Generate Report</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
           <h1 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
             <FileText className="w-5 h-5" />
             Generate Report
           </h1>
-          <div className="w-[100px]"></div> {/* Spacer for center alignment */}
         </div>
       </header>
 

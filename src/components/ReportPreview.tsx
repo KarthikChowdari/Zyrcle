@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Download, 
   Eye, 
@@ -184,33 +185,30 @@ export function ReportPreview({ reportData, onDownload, onShare, className = "" 
         </CardHeader>
       </Card>
 
-      {/* Navigation Tabs */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="flex border-b">
+      {/* Report Content with Tabs */}
+      <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
+        <Card>
+          <CardContent className="p-4">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              {reportData.sections
+                .sort((a, b) => a.order - b.order)
+                .map((section) => (
+                  <TabsTrigger key={section.id} value={section.type}>
+                    {section.title}
+                  </TabsTrigger>
+                ))}
+            </TabsList>
+            
             {reportData.sections
               .sort((a, b) => a.order - b.order)
               .map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.type)}
-                  className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    activeSection === section.type
-                      ? 'border-blue-500 text-blue-600 bg-blue-50'
-                      : 'border-transparent text-slate-600 hover:text-slate-800 hover:bg-slate-50'
-                  }`}
-                >
-                  {section.title}
-                </button>
+                <TabsContent key={section.id} value={section.type} className="min-h-[400px] space-y-4">
+                  {renderSectionContent()}
+                </TabsContent>
               ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Section Content */}
-      <div className="min-h-[400px]">
-        {renderSectionContent()}
-      </div>
+          </CardContent>
+        </Card>
+      </Tabs>
 
       {/* Report Metadata */}
       <Card>

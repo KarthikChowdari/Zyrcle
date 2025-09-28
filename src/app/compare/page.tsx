@@ -20,6 +20,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import { StackedBar } from "@/components/StackedBar"
 import { Sankey } from "@/components/Sankey"
 import { ImputedBadge } from "@/components/ImputedBadge"
@@ -233,13 +241,18 @@ export default function ComparePage() {
       <header className="border-b bg-[#f8f3e6] print:hidden">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Home
-                </Button>
-              </Link>
+            <div className="flex flex-col gap-3">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Quick Compare</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
               <h1 className="text-xl font-semibold text-slate-900">
                 Quick Compare: Primary vs Recycled Aluminium
               </h1>

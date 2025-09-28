@@ -10,6 +10,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 import { BarChart3, FileText, Zap } from "lucide-react";
 
 export default function HomePage() {
@@ -92,20 +100,33 @@ export default function HomePage() {
           >
             Zyrcle
           </motion.h1>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
-            {["HOW IT WORKS", "PRICING", "BLOG"].map((item, i) => (
-              <motion.div
-                key={item}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.1, duration: 0.6 }}
-              >
-                <Link href="#" className="hover:text-green-400">
-                  {item}
-                </Link>
-              </motion.div>
-            ))}
-          </nav>
+          <motion.nav
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="hidden md:block"
+          >
+            <NavigationMenu>
+              <NavigationMenuList>
+                {["HOW IT WORKS", "PRICING", "BLOG"].map((item, i) => (
+                  <NavigationMenuItem key={item}>
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + i * 0.1, duration: 0.6 }}
+                    >
+                      <NavigationMenuLink
+                        href="#"
+                        className="text-sm font-semibold text-white hover:text-green-400 transition-colors"
+                      >
+                        {item}
+                      </NavigationMenuLink>
+                    </motion.div>
+                  </NavigationMenuItem>
+                ))}
+              </NavigationMenuList>
+            </NavigationMenu>
+          </motion.nav>
         </div>
       </header>
 

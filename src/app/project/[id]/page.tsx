@@ -13,6 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImputedBadge } from "@/components/ImputedBadge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 // --- Types & Defaults ---
 type Material = 'Aluminium' | 'Copper';
@@ -210,12 +218,24 @@ export default function CustomProjectPage({ params }: { params: { id: string } }
     return (
         <div className="min-h-screen bg-[#f8f3e6]">
             <header className="border-b bg-white print:hidden sticky top-0 z-10">
-                <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-                    <Link href="/"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-2" />Back</Button></Link>
-                    <h1 className="text-lg font-semibold text-slate-800">Custom Project: {project.name}</h1>
-                    <Button onClick={handleCreateComparison} className="bg-blue-600 hover:bg-blue-700" disabled={!lcaResults || isLoading}>
-                        <Plus className="w-4 h-4 mr-2" /> Create Comparison
-                    </Button>
+                <div className="container mx-auto px-4 py-4 space-y-2">
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator />
+                            <BreadcrumbItem>
+                                <BreadcrumbPage>Custom Project</BreadcrumbPage>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-lg font-semibold text-slate-800">Custom Project: {project.name}</h1>
+                        <Button onClick={handleCreateComparison} className="bg-blue-600 hover:bg-blue-700" disabled={!lcaResults || isLoading}>
+                            <Plus className="w-4 h-4 mr-2" /> Create Comparison
+                        </Button>
+                    </div>
                 </div>
             </header>
 
