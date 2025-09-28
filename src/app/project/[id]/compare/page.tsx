@@ -5,6 +5,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { ArrowLeft, Download, TrendingUp, TrendingDown } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import ProtectedPage from "@/components/ProtectedPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,6 +78,7 @@ const lciParameters = [
 ];
 
 export default function ComparePathwaysPage({ params }: { params: { id: string } }) {
+    const { user } = useAuth();
     const [originalProject, setOriginalProject] = useState<FullProject | null>(null);
     const [comparisonProject, setComparisonProject] = useState<FullProject | null>(null);
     const [deltaMetrics, setDeltaMetrics] = useState<DeltaMetrics | null>(null);
@@ -179,17 +182,21 @@ export default function ComparePathwaysPage({ params }: { params: { id: string }
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#0A1F0A] via-[#122315] to-[#1C2B1C] flex items-center justify-center">
-                <Skeleton className="w-64 h-8 bg-white/20" />
-            </div>
+            <ProtectedPage>
+                <div className="min-h-screen bg-gradient-to-br from-[#0A1F0A] via-[#122315] to-[#1C2B1C] flex items-center justify-center">
+                    <Skeleton className="w-64 h-8 bg-white/20" />
+                </div>
+            </ProtectedPage>
         );
     }
 
     if (!originalProject || !comparisonProject || !deltaMetrics) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#0A1F0A] via-[#122315] to-[#1C2B1C] text-white flex flex-col items-center justify-center text-center p-4">
-                <Card className="max-w-md bg-white/5 border-white/10"><CardHeader><CardTitle>No Comparison Data</CardTitle></CardHeader><CardContent><p className="mb-4 text-white/80">Please start by creating a custom project first.</p><Link href="/"><Button variant="ghost" className="text-white hover:bg-white/10"><ArrowLeft className="w-4 h-4 mr-2"/> Back to Home</Button></Link></CardContent></Card>
-            </div>
+            <ProtectedPage>
+                <div className="min-h-screen bg-gradient-to-br from-[#0A1F0A] via-[#122315] to-[#1C2B1C] text-white flex flex-col items-center justify-center text-center p-4">
+                    <Card className="max-w-md bg-white/5 border-white/10"><CardHeader><CardTitle>No Comparison Data</CardTitle></CardHeader><CardContent><p className="mb-4 text-white/80">Please start by creating a custom project first.</p><Link href="/"><Button variant="ghost" className="text-white hover:bg-white/10"><ArrowLeft className="w-4 h-4 mr-2"/> Back to Home</Button></Link></CardContent></Card>
+                </div>
+            </ProtectedPage>
         );
     }
 
@@ -201,7 +208,8 @@ export default function ComparePathwaysPage({ params }: { params: { id: string }
     });
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#0A1F0A] via-[#122315] to-[#1C2B1C] text-white">
+        <ProtectedPage>
+            <div className="min-h-screen bg-gradient-to-br from-[#0A1F0A] via-[#122315] to-[#1C2B1C] text-white">
             <motion.header
                 className="border-b border-white/10 backdrop-blur-sm sticky top-0 z-50 print:hidden"
                 initial={{ y: -60, opacity: 0 }}
@@ -407,6 +415,7 @@ export default function ComparePathwaysPage({ params }: { params: { id: string }
                 </ScrollReveal>
             </main>
         </div>
+        </ProtectedPage>
     );
 }
 

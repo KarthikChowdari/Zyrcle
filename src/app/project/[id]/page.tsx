@@ -5,6 +5,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, BrainCircuit, Loader2, Upload } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import ProtectedPage from "@/components/ProtectedPage";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -152,6 +154,9 @@ export default function CustomProjectPage({ params }: { params: { id: string } }
             },
         ],
     });
+    
+    const { user } = useAuth();
+    
     const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -216,7 +221,8 @@ export default function CustomProjectPage({ params }: { params: { id: string } }
     const productTypes = [ "Automotive Components", "Beverage Can", "Building Construction", "Cookware", "Electronics (PCB)", "Industrial Cable", "Packaging Foil" ];
 
     return (
-        <div className="min-h-screen bg-[#f8f3e6]">
+        <ProtectedPage>
+            <div className="min-h-screen bg-[#f8f3e6]">
             <header className="border-b bg-white print:hidden sticky top-0 z-10">
                 <div className="container mx-auto px-4 py-4 space-y-2">
                     <Breadcrumb>
@@ -331,6 +337,7 @@ export default function CustomProjectPage({ params }: { params: { id: string } }
                 </div>
             </div>
         </div>
+        </ProtectedPage>
     );
 }
 

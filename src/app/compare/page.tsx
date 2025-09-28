@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowLeft, Download, Info, Save } from "lucide-react"
-import { supabase } from "@/lib/supabaseClient"
+import { createSupabaseClientComponent } from "@/lib/supabaseClient"
+import { useAuth } from "@/components/auth/AuthProvider"
 import { useToast } from "@/components/ui/use-toast"
+import ProtectedPage from "@/components/ProtectedPage"
 import {
   Dialog,
   DialogContent,
@@ -104,6 +106,8 @@ const lciParameters = [
 ];
 
 export default function ComparePage() {
+  const { user } = useAuth()
+  const supabase = createSupabaseClientComponent()
   const [config, setConfig] = useState<ProjectConfig>({
     recycledContent: 60,
     gridEmissions: 75,
@@ -197,16 +201,23 @@ export default function ComparePage() {
       return
     }
 
-    const { error } = await supabase.from("projects").insert([
+    console.log("Attempting to save project:", {
+      name: projectName,
+      user_id: user?.id,
+      configLength: Object.keys(config).length,
+      hasResult: !!configuredResult
+    })
+
+    const { data, error } = await supabase.from("projects").insert([
       {
         name: projectName,
         project_data: {
           inputs: config,
           outputs: configuredResult,
         },
-        user_id: null,
+        user_id: user?.id,
       },
-    ])
+    ]).select()
 
     if (error) {
       console.error("Error saving project:", error)
@@ -216,6 +227,7 @@ export default function ComparePage() {
         variant: "destructive",
       })
     } else {
+      console.log("Project saved successfully:", data)
       toast({
         title: "Project Saved!",
         description: `"${projectName}" has been saved successfully.`,
@@ -236,7 +248,8 @@ export default function ComparePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f3e6]">
+    <ProtectedPage>
+      <div className="min-h-screen bg-[#f8f3e6]">
       {/* Header */}
       <header className="border-b bg-[#f8f3e6] print:hidden">
         <div className="container mx-auto px-4 py-4">
@@ -578,5 +591,6 @@ export default function ComparePage() {
         </div>
       </div>
     </div>
+    </ProtectedPage>
   )
 }

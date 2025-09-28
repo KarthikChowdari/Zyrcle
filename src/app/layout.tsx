@@ -5,7 +5,8 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
-import { Toaster } from "@/components/ui/toaster" // This import was added
+import { Toaster } from "@/components/ui/toaster"
+import { AuthProvider } from "@/components/auth/AuthProvider"
 
 export const metadata: Metadata = {
     title: "CircularMetal LCA - AI-Assisted LCA & Circularity for Metals",
@@ -21,9 +22,11 @@ export default function RootLayout({
     return (
         <html lang="en">
         <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <Suspense fallback={null}>{children}</Suspense>
+        <AuthProvider>
+            <Suspense fallback={null}>{children}</Suspense>
+        </AuthProvider>
         <Analytics />
-        <Toaster /> {/* This component was added */}
+        <Toaster />
         </body>
         </html>
     )

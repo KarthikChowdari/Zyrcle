@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseRouteHandler } from '@/lib/supabaseServer';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { reportId: string } }
 ) {
   try {
+    // Check authentication
+    const supabase = createSupabaseRouteHandler();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    const userId = session.user.id;
     const reportId = params.reportId;
     
     if (!reportId) {

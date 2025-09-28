@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, FileText, Download, Upload, Settings, Calendar, Loader2, ChevronDown, CheckCircle2 } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import ProtectedPage from "@/components/ProtectedPage";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ import { downloadUtils } from "@/lib/download-utils";
 // Types are now imported from lib/report-types.ts
 
 export default function GenerateReportPage() {
+  const { user } = useAuth()
   const { toast } = useToast();
   
   const [config, setConfig] = useState<ReportConfig>({
@@ -48,6 +51,41 @@ export default function GenerateReportPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [generatedReport, setGeneratedReport] = useState<{ reportId: string; downloadUrl: string; } | null>(null);
+  const [availableProjects, setAvailableProjects] = useState<ProjectSummary[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  // Fetch user's projects
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await fetch('/api/projects');
+        const data = await response.json();
+        
+        if (data.success) {
+          setAvailableProjects(data.projects);
+        } else {
+          toast({
+            title: "Error loading projects",
+            description: data.message || "Failed to load your projects",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        toast({
+          title: "Error loading projects",
+          description: "Failed to load your projects",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    fetchProjects();
+  }, [user, toast]);
 
   // Function to trigger file download
   const triggerDownload = (downloadUrl: string, reportId: string, format: string) => {
@@ -80,13 +118,6 @@ export default function GenerateReportPage() {
       }
     }
   };
-  
-  // Mock project data - in real implementation, this would come from API
-  const availableProjects: ProjectSummary[] = [
-    { id: '1', name: 'Aluminium Beverage Can', material: 'Aluminium', lastUpdated: '2024-12-15', status: 'completed' },
-    { id: '2', name: 'Copper Wire Production', material: 'Copper', lastUpdated: '2024-12-10', status: 'completed' },
-    { id: '3', name: 'Recycled Steel Frame', material: 'Steel', lastUpdated: '2024-12-05', status: 'in-progress' },
-  ];
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -186,7 +217,8 @@ export default function GenerateReportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f3e6]">
+    <ProtectedPage>
+      <div className="min-h-screen bg-[#f8f3e6]">
       {/* Header */}
       <header className="border-b bg-white sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 space-y-2">
@@ -344,31 +376,53 @@ export default function GenerateReportPage() {
                     
                     {/* Project Selection */}
                     <div className="space-y-3">
-                      <Label className="text-sm font-medium">Available Projects</Label>
+                      <Label className="text-sm font-medium">Your Projects</Label>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {availableProjects.map((project) => (
-                          <div key={project.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                            <Checkbox
-                              id={project.id}
-                              checked={config.projects.includes(project.id)}
-                              onCheckedChange={(checked) => handleProjectSelection(project.id, checked as boolean)}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <label htmlFor={project.id} className="text-sm font-medium cursor-pointer">
-                                {project.name}
-                              </label>
-                              <p className="text-xs text-slate-500">
-                                {project.material} • Updated {project.lastUpdated} • 
-                                <span className={`ml-1 capitalize ${
-                                  project.status === 'completed' ? 'text-green-600' : 
-                                  project.status === 'in-progress' ? 'text-blue-600' : 'text-yellow-600'
-                                }`}>
-                                  {project.status}
-                                </span>
-                              </p>
-                            </div>
+                        {loadingProjects ? (
+                          <div className="space-y-2">
+                            {[1, 2, 3].map((i) => (
+                              <div key={i} className="flex items-center space-x-3 p-3 border rounded-lg">
+                                <div className="w-4 h-4 bg-slate-200 rounded animate-pulse"></div>
+                                <div className="flex-1 space-y-2">
+                                  <div className="h-4 bg-slate-200 rounded animate-pulse"></div>
+                                  <div className="h-3 bg-slate-200 rounded w-3/4 animate-pulse"></div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        ) : availableProjects.length === 0 ? (
+                          <div className="text-center py-8 text-slate-500">
+                            <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                            <p className="text-sm">No projects found</p>
+                            <p className="text-xs mt-1">Create some projects first to include in your reports</p>
+                          </div>
+                        ) : (
+                          availableProjects.map((project) => (
+                            <div key={project.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 transition-colors">
+                              <Checkbox
+                                id={project.id}
+                                checked={config.projects.includes(project.id)}
+                                onCheckedChange={(checked) => handleProjectSelection(project.id, checked as boolean)}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <label htmlFor={project.id} className="text-sm font-medium cursor-pointer">
+                                  {project.name}
+                                </label>
+                                <p className="text-xs text-slate-500">
+                                  {project.material} • Updated {project.lastUpdated} • 
+                                  <span className="ml-1 capitalize text-green-600">
+                                    {project.status}
+                                  </span>
+                                  {project.metrics?.gwp && (
+                                    <span className="ml-2">
+                                      {project.metrics.gwp.toFixed(1)} kg CO₂e
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
 
@@ -559,5 +613,6 @@ export default function GenerateReportPage() {
         </motion.div>
       </div>
     </div>
+    </ProtectedPage>
   );
 }

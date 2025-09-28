@@ -8,6 +8,7 @@ import {
   ChartData,
   RecommendationItem
 } from "@/lib/report-types";
+import { createSupabaseRouteHandler } from '@/lib/supabaseServer';
 
 // Mock data for demonstration - in production, this would connect to your database
 const mockProjectsData = [
@@ -56,8 +57,8 @@ const mockProjectsData = [
 ];
 
 // Helper function to generate executive summary
-function generateExecutiveSummary(projectIds: string[]): ExecutiveSummary {
-  const selectedProjects = mockProjectsData.filter(p => projectIds.includes(p.id));
+function generateExecutiveSummary(userProjects: any[]): ExecutiveSummary {
+  const selectedProjects = userProjects;
   const totalEmissions = selectedProjects.reduce((sum, p) => sum + (p.metrics?.gwp || 0), 0);
   const avgCircularity = selectedProjects.reduce((sum, p) => sum + (p.metrics?.circularityIndex || 0), 0) / selectedProjects.length;
   
@@ -84,8 +85,8 @@ function generateExecutiveSummary(projectIds: string[]): ExecutiveSummary {
 }
 
 // Helper function to generate metrics section
-function generateMetricsSection(projectIds: string[]): MetricsSection {
-  const selectedProjects = mockProjectsData.filter(p => projectIds.includes(p.id));
+function generateMetricsSection(userProjects: any[]): MetricsSection {
+  const selectedProjects = userProjects;
   const totalGWP = selectedProjects.reduce((sum, p) => sum + (p.metrics?.gwp || 0), 0);
   const avgGWP = totalGWP / selectedProjects.length;
   
@@ -125,8 +126,8 @@ function generateMetricsSection(projectIds: string[]): MetricsSection {
 }
 
 // Helper function to generate chart data
-function generateChartData(projectIds: string[]): ChartData[] {
-  const selectedProjects = mockProjectsData.filter(p => projectIds.includes(p.id));
+function generateChartData(userProjects: any[]): ChartData[] {
+  const selectedProjects = userProjects;
   
   return [
     {
@@ -169,8 +170,8 @@ function generateChartData(projectIds: string[]): ChartData[] {
 }
 
 // Helper function to generate recommendations
-function generateRecommendations(projectIds: string[]): RecommendationItem[] {
-  const selectedProjects = mockProjectsData.filter(p => projectIds.includes(p.id));
+function generateRecommendations(userProjects: any[]): RecommendationItem[] {
+  const selectedProjects = userProjects;
   const avgRecycledContent = selectedProjects.reduce((sum, p) => sum + (p.metrics?.recycledContent || 0), 0) / selectedProjects.length;
   
   const recommendations: RecommendationItem[] = [];
@@ -216,6 +217,18 @@ function generateRecommendations(projectIds: string[]): RecommendationItem[] {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const supabase = createSupabaseRouteHandler();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      return NextResponse.json<ReportGenerationResponse>({
+        success: false,
+        error: "Unauthorized"
+      }, { status: 401 });
+    }
+    
+    const userId = session.user.id;
     const body: ReportGenerationRequest = await request.json();
     const { config } = body;
     
@@ -237,12 +250,26 @@ export async function POST(request: NextRequest) {
     // Simulate report generation delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    // Fetch user's selected projects
+    const { data: userProjects, error: projectError } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('user_id', userId)
+      .in('id', config.projects.map(id => parseInt(id)));
+    
+    if (projectError) {
+      return NextResponse.json<ReportGenerationResponse>({
+        success: false,
+        error: "Failed to fetch user projects"
+      }, { status: 500 });
+    }
+
     // Generate report data
     const reportId = `report-${Date.now()}`;
-    const executiveSummary = generateExecutiveSummary(config.projects);
-    const metricsSection = generateMetricsSection(config.projects);
-    const chartData = generateChartData(config.projects);
-    const recommendations = generateRecommendations(config.projects);
+    const executiveSummary = generateExecutiveSummary(userProjects || []);
+    const metricsSection = generateMetricsSection(userProjects || []);
+    const chartData = generateChartData(userProjects || []);
+    const recommendations = generateRecommendations(userProjects || []);
     
     const reportData: ReportData = {
       id: reportId,

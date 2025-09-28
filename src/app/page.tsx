@@ -19,6 +19,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { BarChart3, FileText, Zap } from "lucide-react";
+import BasicUserMenu from "@/components/BasicUserMenu";
 
 export default function HomePage() {
   // Generate Report is now a full feature - no need for handler
@@ -78,7 +79,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#122315] text-white relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-[#122315] text-white relative">
       {/* Background Illustration with Overlay */}
       <div className="absolute inset-0 z-0">
         <img
@@ -100,33 +101,49 @@ export default function HomePage() {
           >
             Zyrcle
           </motion.h1>
-          <motion.nav
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="hidden md:block"
-          >
-            <NavigationMenu>
-              <NavigationMenuList>
-                {["HOW IT WORKS", "PRICING", "BLOG"].map((item, i) => (
-                  <NavigationMenuItem key={item}>
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 + i * 0.1, duration: 0.6 }}
-                    >
-                      <NavigationMenuLink
-                        href="#"
-                        className="text-sm font-semibold text-white hover:text-green-400 transition-colors"
+          <div className="flex items-center space-x-4">
+            <motion.nav
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="hidden md:block"
+            >
+              <NavigationMenu>
+                <NavigationMenuList>
+                  {[
+                    { name: "MY PROJECTS", href: "/projects" },
+                    { name: "HOW IT WORKS", href: "#" },
+                    { name: "PRICING", href: "#" }
+                  ].map((item, i) => (
+                    <NavigationMenuItem key={item.name}>
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 + i * 0.1, duration: 0.6 }}
                       >
-                        {item}
-                      </NavigationMenuLink>
-                    </motion.div>
-                  </NavigationMenuItem>
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
-          </motion.nav>
+                        <NavigationMenuLink
+                          href={item.href}
+                          className="text-sm font-semibold text-white hover:text-green-400 transition-colors"
+                        >
+                          {item.name}
+                        </NavigationMenuLink>
+                      </motion.div>
+                    </NavigationMenuItem>
+                  ))}
+                </NavigationMenuList>
+              </NavigationMenu>
+            </motion.nav>
+            
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+              className="relative"
+            >
+              <BasicUserMenu />
+            </motion.div>
+            
+          </div>
         </div>
       </header>
 

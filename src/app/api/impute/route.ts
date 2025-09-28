@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createSupabaseRouteHandler } from '@/lib/supabaseServer';
 
 // Data Imports
 import lciAluminiumData from '@/data/lca-aluminium.json';
@@ -215,6 +216,15 @@ function createModelInput(material: string, productType: string, region: string)
 // --- API Endpoint Handler ---
 export async function POST(request: Request) {
     try {
+        // Check authentication
+        const supabase = createSupabaseRouteHandler();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+        }
+        
+        const userId = session.user.id;
         const body = await request.json();
         const project = body.project;
 

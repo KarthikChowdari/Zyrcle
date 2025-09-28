@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createSupabaseRouteHandler } from '@/lib/supabaseServer';
 
 // --- TYPE DEFINITIONS ---
 interface ProjectConfig {
@@ -34,6 +35,15 @@ interface CompareRequestBody {
 // --- API ENDPOINT HANDLER ---
 export async function POST(request: Request) {
     try {
+        // Check authentication
+        const supabase = createSupabaseRouteHandler();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+        }
+        
+        const userId = session.user.id;
         const body: CompareRequestBody = await request.json();
         const { projectA, projectB } = body;
 
