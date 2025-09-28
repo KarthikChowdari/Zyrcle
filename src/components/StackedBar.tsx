@@ -9,6 +9,7 @@ interface LcaResult {
     materialProduction: number
     transport: number
     gridEnergy: number
+    environmental?: number
   }
 }
 
@@ -57,12 +58,14 @@ export function StackedBar({ primaryData, configuredData }: StackedBarProps) {
       "Material Production": primaryData.gwpBreakdown.materialProduction,
       "Grid Energy": primaryData.gwpBreakdown.gridEnergy,
       Transport: primaryData.gwpBreakdown.transport,
+      Environmental: primaryData.gwpBreakdown.environmental || 0,
     },
     {
       pathway: "Configured Pathway",
       "Material Production": configuredData.gwpBreakdown.materialProduction,
       "Grid Energy": configuredData.gwpBreakdown.gridEnergy,
       Transport: configuredData.gwpBreakdown.transport,
+      Environmental: configuredData.gwpBreakdown.environmental || 0,
     },
   ]
 
@@ -118,7 +121,8 @@ export function StackedBar({ primaryData, configuredData }: StackedBarProps) {
 
                 <Bar dataKey="Material Production" stackId="a" fill="#3b82f6" name="Material Production" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="Transport" stackId="a" fill="#10b981" name="Transport" />
-                <Bar dataKey="Grid Energy" stackId="a" fill="#f59e0b" name="Grid Energy" radius={[0, 0, 4, 4]} />
+                <Bar dataKey="Grid Energy" stackId="a" fill="#f59e0b" name="Grid Energy" />
+                <Bar dataKey="Environmental" stackId="a" fill="#8b5cf6" name="Environmental Impact" radius={[0, 0, 4, 4]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -126,7 +130,7 @@ export function StackedBar({ primaryData, configuredData }: StackedBarProps) {
           {/* Result Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {data.map((pathway, index) => {
-              const total = pathway["Material Production"] + pathway["Grid Energy"] + pathway["Transport"]
+              const total = pathway["Material Production"] + pathway["Grid Energy"] + pathway["Transport"] + pathway["Environmental"]
               return (
                 <div
                   key={index}
@@ -166,6 +170,16 @@ export function StackedBar({ primaryData, configuredData }: StackedBarProps) {
                         {((pathway["Grid Energy"] / total) * 100).toFixed(0)}%
                       </span>
                     </div>
+                    {pathway["Environmental"] > 0 && (
+                      <div className="flex justify-between">
+                        <span className="flex items-center gap-2 text-white">
+                          <div className="w-4 h-4 rounded-full bg-purple-500"></div> Environmental
+                        </span>
+                        <span className="font-semibold text-purple-500">
+                          {((pathway["Environmental"] / total) * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )

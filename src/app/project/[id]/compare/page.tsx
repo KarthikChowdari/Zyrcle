@@ -10,11 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StackedBar } from "@/components/StackedBar";
 import { Sankey } from "@/components/Sankey";
+import { CostAnalysisCard, CostSummary } from "@/components/CostAnalysis";
+import { calculatePathwayCosts, PathwayCosts } from "@/lib/cost-calculations";
 
 // --- Types ---
 interface LcaResult {
     totalGwp: number;
-    gwpBreakdown: { materialProduction: number; transport: number; gridEnergy: number };
+    gwpBreakdown: { materialProduction: number; transport: number; gridEnergy: number; environmental?: number };
     totalEnergy: number;
     circularityScore: number;
 }
@@ -28,10 +30,56 @@ interface DeltaMetrics {
     circularity_score_delta: number;
 }
 
+const lciParameters = [
+    {
+        name: "Energy Consumption",
+        value: 15.2,
+        unit: "kWh/kg",
+        isImputed: false,
+        confidence: 95,
+    },
+    {
+        name: "Transport Distance",
+        value: 450,
+        unit: "km",
+        isImputed: true,
+        confidence: 78,
+    },
+    {
+        name: "Smelting Energy",
+        value: 8.7,
+        unit: "kWh/kg",
+        isImputed: true,
+        confidence: 82,
+    },
+    {
+        name: "Recycling Rate",
+        value: 75,
+        unit: "%",
+        isImputed: false,
+        confidence: 90,
+    },
+    {
+        name: "Water Usage",
+        value: 2.3,
+        unit: "L/kg",
+        isImputed: true,
+        confidence: 65,
+    },
+    {
+        name: "Waste Generation",
+        value: 0.15,
+        unit: "kg/kg",
+        isImputed: true,
+        confidence: 70,
+    },
+];
+
 export default function ComparePathwaysPage({ params }: { params: { id: string } }) {
     const [originalProject, setOriginalProject] = useState<FullProject | null>(null);
     const [comparisonProject, setComparisonProject] = useState<FullProject | null>(null);
     const [deltaMetrics, setDeltaMetrics] = useState<DeltaMetrics | null>(null);
+    const [pathwayCosts, setPathwayCosts] = useState<PathwayCosts | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -50,6 +98,11 @@ export default function ComparePathwaysPage({ params }: { params: { id: string }
             comparisonInputs.recycledContent = Math.min((original.recycledContent ?? 0) + 25, 95);
             comparisonInputs.gridEmissions_gCO2_per_kWh = Math.max((original.gridEmissions_gCO2_per_kWh ?? 500) - 200, 100);
             comparisonInputs.end_of_life_recycling_rate = Math.min((original.end_of_life_recycling_rate ?? 0) + 15, 95);
+            // Optimize additional parameters
+            comparisonInputs.energyConsumption = Math.max((original.energyConsumption ?? 15.2) - 3, 5);
+            comparisonInputs.smeltingEnergy = Math.max((original.smeltingEnergy ?? 8.7) - 2, 3);
+            comparisonInputs.waterUsage = Math.max((original.waterUsage ?? 2.3) - 0.5, 0.5);
+            comparisonInputs.wasteGeneration = Math.max((original.wasteGeneration ?? 0.15) - 0.05, 0.05);
 
             try {
                 const response = await fetch('/api/impute', {
@@ -66,6 +119,37 @@ export default function ComparePathwaysPage({ params }: { params: { id: string }
                 const gwp_delta_percent = original.results.totalGwp !== 0 ? (gwp_delta / original.results.totalGwp) * 100 : 0;
                 const circularity_score_delta = comparison.results.circularityScore - original.results.circularityScore;
                 setDeltaMetrics({ gwp_delta, gwp_delta_percent, circularity_score_delta });
+
+                // Calculate pathway costs
+                const originalConfig = {
+                    recycledContent: original.recycledContent ?? 60,
+                    gridEmissions: original.gridEmissions_gCO2_per_kWh ?? 450,
+                    transportDistance: original.transportDistance_km ?? 500,
+                    recyclingRate: original.end_of_life_recycling_rate ?? 60,
+                    energyConsumption: original.energyConsumption ?? 15.2,
+                    smeltingEnergy: original.smeltingEnergy ?? 8.7,
+                    waterUsage: original.waterUsage ?? 2.3,
+                    wasteGeneration: original.wasteGeneration ?? 0.15,
+                };
+                const optimizedConfig = {
+                    recycledContent: comparison.recycledContent ?? 85,
+                    gridEmissions: comparison.gridEmissions_gCO2_per_kWh ?? 250,
+                    transportDistance: comparison.transportDistance_km ?? 500,
+                    recyclingRate: comparison.end_of_life_recycling_rate ?? 75,
+                    energyConsumption: comparison.energyConsumption ?? 12.2,
+                    smeltingEnergy: comparison.smeltingEnergy ?? 6.7,
+                    waterUsage: comparison.waterUsage ?? 1.8,
+                    wasteGeneration: comparison.wasteGeneration ?? 0.10,
+                };
+                const costs = calculatePathwayCosts(
+                    originalConfig,
+                    optimizedConfig,
+                    original.results,
+                    comparison.results,
+                    undefined, // Use default cost factors
+                    1000 // 1000 kg production volume
+                );
+                setPathwayCosts(costs);
 
             } catch (error) {
                 console.error("Comparison calculation failed:", error);
@@ -166,6 +250,19 @@ export default function ComparePathwaysPage({ params }: { params: { id: string }
                                     <p className={`text-2xl font-bold ${deltaMetrics.circularity_score_delta > 0 ? "text-green-400" : "text-red-400"}`}>{deltaMetrics.circularity_score_delta > 0 ? "+" : ""}{deltaMetrics.circularity_score_delta.toFixed(1)}</p>
                                 </CardContent>
                             </Card>
+                            
+                            {/* Cost Summary */}
+                            {pathwayCosts && originalProject && comparisonProject && (
+                                <Card className="bg-gradient-to-br from-purple-900 to-pink-800 border-purple-600 hover:shadow-lg">
+                                    <CardContent className="pt-4">
+                                        <CostSummary 
+                                            costs={pathwayCosts}
+                                            co2eSaved={Math.max(0, (originalProject.results.totalGwp - comparisonProject.results.totalGwp) * 1000)}
+                                            isCompact={true}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     </ScrollReveal>
 
@@ -178,6 +275,136 @@ export default function ComparePathwaysPage({ params }: { params: { id: string }
                         </div>
                     </ScrollReveal>
                 </div>
+
+                {/* Parameter Comparison Section */}
+                <ScrollReveal delay={0.4}>
+                    <Card className="bg-white/5 border-white/10">
+                        <CardHeader>
+                            <CardTitle className="text-white text-center">LCI Parameters Comparison</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {/* Original Project Parameters */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white mb-4 text-center">Original</h3>
+                                    <div className="space-y-3">
+                                        {[
+                                            { name: "Recycled Content", value: originalProject.recycledContent ?? 60, unit: "%" },
+                                            { name: "Grid Emissions", value: originalProject.gridEmissions_gCO2_per_kWh ?? 450, unit: "gCO₂/kWh" },
+                                            { name: "Transport Distance", value: originalProject.transportDistance_km ?? 500, unit: "km" },
+                                            { name: "End-of-Life Recycling Rate", value: originalProject.end_of_life_recycling_rate ?? 60, unit: "%" },
+                                            { name: "Energy Consumption", value: originalProject.energyConsumption ?? 15.2, unit: "kWh/kg" },
+                                            { name: "Smelting Energy", value: originalProject.smeltingEnergy ?? 8.7, unit: "kWh/kg" },
+                                            { name: "Water Usage", value: originalProject.waterUsage ?? 2.3, unit: "L/kg" },
+                                            { name: "Waste Generation", value: originalProject.wasteGeneration ?? 0.15, unit: "kg/kg" },
+                                        ].map((param, index) => (
+                                            <div key={index} className="flex justify-between items-center py-2 border-b border-white/10 last:border-b-0">
+                                                <span className="text-white/80">{param.name}</span>
+                                                <span className="text-white font-semibold">{param.value} {param.unit}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Optimized Project Parameters */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white mb-4 text-center">Optimized</h3>
+                                    <div className="space-y-3">
+                                        {[
+                                            { name: "Recycled Content", value: comparisonProject.recycledContent ?? 85, unit: "%" },
+                                            { name: "Grid Emissions", value: comparisonProject.gridEmissions_gCO2_per_kWh ?? 250, unit: "gCO₂/kWh" },
+                                            { name: "Transport Distance", value: comparisonProject.transportDistance_km ?? 500, unit: "km" },
+                                            { name: "End-of-Life Recycling Rate", value: comparisonProject.end_of_life_recycling_rate ?? 75, unit: "%" },
+                                            { name: "Energy Consumption", value: comparisonProject.energyConsumption ?? 12.2, unit: "kWh/kg" },
+                                            { name: "Smelting Energy", value: comparisonProject.smeltingEnergy ?? 6.7, unit: "kWh/kg" },
+                                            { name: "Water Usage", value: comparisonProject.waterUsage ?? 1.8, unit: "L/kg" },
+                                            { name: "Waste Generation", value: comparisonProject.wasteGeneration ?? 0.10, unit: "kg/kg" },
+                                        ].map((param, index) => (
+                                            <div key={index} className="flex justify-between items-center py-2 border-b border-white/10 last:border-b-0">
+                                                <span className="text-white/80">{param.name}</span>
+                                                <span className="text-green-400 font-semibold">{param.value} {param.unit}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </ScrollReveal>
+
+                {/* Cost Analysis Section */}
+                <ScrollReveal delay={0.5}>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Cost Analysis Card */}
+                        <div>
+                            {isLoading || !pathwayCosts || !originalProject || !comparisonProject ? (
+                                <Skeleton className="h-80 w-full bg-white/20" />
+                            ) : (
+                                <CostAnalysisCard 
+                                    costs={pathwayCosts}
+                                    co2eSaved={Math.max(0, (originalProject.results.totalGwp - comparisonProject.results.totalGwp) * 1000)}
+                                    className="bg-gradient-to-br from-white/10 to-white/5 border-white/20 text-white"
+                                />
+                            )}
+                        </div>
+                        
+                        {/* Cost Efficiency Metrics */}
+                        <div className="space-y-6">
+                            <h2 className="text-center text-lg font-semibold text-white">Economic Impact</h2>
+                            
+                            {isLoading || !pathwayCosts || !deltaMetrics ? (
+                                <div className="space-y-4">
+                                    <Skeleton className="h-20 w-full bg-white/20" />
+                                    <Skeleton className="h-20 w-full bg-white/20" />
+                                    <Skeleton className="h-20 w-full bg-white/20" />
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <Card className="bg-gradient-to-br from-purple-900 to-indigo-900 border-purple-600 hover:shadow-lg">
+                                        <CardContent className="pt-6 text-center">
+                                            <p className="text-sm text-white/80">Additional Investment</p>
+                                            <p className="text-2xl font-bold text-purple-300">
+                                                {pathwayCosts.totalAdditionalCost >= 10000000 ? 
+                                                    `₹${(pathwayCosts.totalAdditionalCost / 10000000).toFixed(2)} Cr` : 
+                                                    pathwayCosts.totalAdditionalCost >= 100000 ? 
+                                                    `₹${(pathwayCosts.totalAdditionalCost / 100000).toFixed(2)} L` : 
+                                                    `₹${(pathwayCosts.totalAdditionalCost / 1000).toFixed(2)} K`
+                                                }
+                                            </p>
+                                            <p className="text-xs text-white/60 mt-1">Per 1000 kg/year</p>
+                                        </CardContent>
+                                    </Card>
+                                    
+                                    <Card className="bg-gradient-to-br from-green-900 to-emerald-800 border-green-600 hover:shadow-lg">
+                                        <CardContent className="pt-6 text-center">
+                                            <p className="text-sm text-white/80">Cost per CO₂e Saved</p>
+                                            <p className="text-2xl font-bold text-green-300">
+                                                {pathwayCosts.costPerKgCO2eSaved >= 1000 ? 
+                                                    `₹${(pathwayCosts.costPerKgCO2eSaved / 1000).toFixed(2)} K` : 
+                                                    `₹${pathwayCosts.costPerKgCO2eSaved.toFixed(2)}`
+                                                }
+                                            </p>
+                                            <p className="text-xs text-white/60 mt-1">Per kg CO₂e</p>
+                                        </CardContent>
+                                    </Card>
+                                    
+                                    <Card className="bg-gradient-to-br from-orange-900 to-red-800 border-orange-600 hover:shadow-lg">
+                                        <CardContent className="pt-6 text-center">
+                                            <p className="text-sm text-white/80">Payback Period</p>
+                                            <p className="text-2xl font-bold text-orange-300">
+                                                {pathwayCosts.totalAdditionalCost > 0 ? 
+                                                    (((originalProject.results.totalGwp - comparisonProject.results.totalGwp) * 1000 * 47) / pathwayCosts.totalAdditionalCost).toFixed(1) : 
+                                                    '∞'
+                                                }
+                                            </p>
+                                            <p className="text-xs text-white/60 mt-1">Years at ₹47/tonne CO₂e</p>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </ScrollReveal>
             </main>
         </div>
     );

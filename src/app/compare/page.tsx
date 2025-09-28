@@ -23,13 +23,19 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { StackedBar } from "@/components/StackedBar"
 import { Sankey } from "@/components/Sankey"
 import { ImputedBadge } from "@/components/ImputedBadge"
-import {  Recycle, Battery, Truck, RefreshCcw } from "lucide-react"
+import { CostAnalysisCard, CostSummary } from "@/components/CostAnalysis"
+import { calculatePathwayCosts, PathwayCosts } from "@/lib/cost-calculations"
+import {  Recycle, Battery, Truck, RefreshCcw, Zap, Flame, Droplets, Trash2 } from "lucide-react"
 
 interface ProjectConfig {
   recycledContent: number
   gridEmissions: number
   transportDistance: number
   recyclingRate: number
+  energyConsumption: number
+  smeltingEnergy: number
+  waterUsage: number
+  wasteGeneration: number
 }
 
 interface LcaResult {
@@ -38,10 +44,56 @@ interface LcaResult {
     materialProduction: number
     transport: number
     gridEnergy: number
+    environmental?: number
   }
   totalEnergy: number
   circularityScore: number
 }
+
+const lciParameters = [
+  {
+    name: "Energy Consumption",
+    value: 15.2,
+    unit: "kWh/kg",
+    isImputed: false,
+    confidence: 95,
+  },
+  {
+    name: "Transport Distance",
+    value: 450,
+    unit: "km",
+    isImputed: true,
+    confidence: 78,
+  },
+  {
+    name: "Smelting Energy",
+    value: 8.7,
+    unit: "kWh/kg",
+    isImputed: true,
+    confidence: 82,
+  },
+  {
+    name: "Recycling Rate",
+    value: 75,
+    unit: "%",
+    isImputed: false,
+    confidence: 90,
+  },
+  {
+    name: "Water Usage",
+    value: 2.3,
+    unit: "L/kg",
+    isImputed: true,
+    confidence: 65,
+  },
+  {
+    name: "Waste Generation",
+    value: 0.15,
+    unit: "kg/kg",
+    isImputed: true,
+    confidence: 70,
+  },
+];
 
 export default function ComparePage() {
   const [config, setConfig] = useState<ProjectConfig>({
@@ -49,6 +101,10 @@ export default function ComparePage() {
     gridEmissions: 75,
     transportDistance: 5000,
     recyclingRate: 40,
+    energyConsumption: 15.2,
+    smeltingEnergy: 8.7,
+    waterUsage: 2.3,
+    wasteGeneration: 0.15,
   })
 
   const [primaryResult, setPrimaryResult] = useState<LcaResult | null>(null)
@@ -57,6 +113,7 @@ export default function ComparePage() {
   const [imputationMeta, setImputationMeta] = useState<any[]>([])
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false)
   const [projectName, setProjectName] = useState("")
+  const [pathwayCosts, setPathwayCosts] = useState<PathwayCosts | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -87,6 +144,18 @@ export default function ComparePage() {
         setPrimaryResult(primaryData.project_imputed.results)
         setConfiguredResult(configuredData.project_imputed.results)
         setImputationMeta(configuredData.imputation_meta)
+
+        // Calculate pathway costs
+        const baselineConfig = { ...config, recycledContent: 0 }
+        const costs = calculatePathwayCosts(
+          baselineConfig,
+          config,
+          primaryData.project_imputed.results,
+          configuredData.project_imputed.results,
+          undefined, // Use default cost factors
+          1000 // 1000 kg production volume
+        )
+        setPathwayCosts(costs)
       } catch (error) {
         console.error("Failed to fetch LCA data:", error)
       } finally {
@@ -319,6 +388,86 @@ export default function ComparePage() {
                 className="[&_.bg-primary]:bg-[#00FF66]"
               />
             </div>
+
+            {/* Energy Consumption */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-[#00FF66]" />
+                  <label className="text-base font-semibold text-[#E2E8F0]">
+                    Energy Consumption
+                  </label>
+                </div>
+                <span className="text-sm text-[#A0AEC0]">{config.energyConsumption} kWh/kg</span>
+              </div>
+              <Slider
+                value={[config.energyConsumption]}
+                onValueChange={(value) => handleConfigChange("energyConsumption", value[0])}
+                max={50}
+                step={0.1}
+                className="[&_.bg-primary]:bg-[#00FF66]"
+              />
+            </div>
+
+            {/* Smelting Energy */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-[#00FF66]" />
+                  <label className="text-base font-semibold text-[#E2E8F0]">
+                    Smelting Energy
+                  </label>
+                </div>
+                <span className="text-sm text-[#A0AEC0]">{config.smeltingEnergy} kWh/kg</span>
+              </div>
+              <Slider
+                value={[config.smeltingEnergy]}
+                onValueChange={(value) => handleConfigChange("smeltingEnergy", value[0])}
+                max={20}
+                step={0.1}
+                className="[&_.bg-primary]:bg-[#00FF66]"
+              />
+            </div>
+
+            {/* Water Usage */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Droplets className="w-5 h-5 text-[#00FF66]" />
+                  <label className="text-base font-semibold text-[#E2E8F0]">
+                    Water Usage
+                  </label>
+                </div>
+                <span className="text-sm text-[#A0AEC0]">{config.waterUsage} L/kg</span>
+              </div>
+              <Slider
+                value={[config.waterUsage]}
+                onValueChange={(value) => handleConfigChange("waterUsage", value[0])}
+                max={10}
+                step={0.1}
+                className="[&_.bg-primary]:bg-[#00FF66]"
+              />
+            </div>
+
+            {/* Waste Generation */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Trash2 className="w-5 h-5 text-[#00FF66]" />
+                  <label className="text-base font-semibold text-[#E2E8F0]">
+                    Waste Generation
+                  </label>
+                </div>
+                <span className="text-sm text-[#A0AEC0]">{config.wasteGeneration} kg/kg</span>
+              </div>
+              <Slider
+                value={[config.wasteGeneration]}
+                onValueChange={(value) => handleConfigChange("wasteGeneration", value[0])}
+                max={1}
+                step={0.01}
+                className="[&_.bg-primary]:bg-[#00FF66]"
+              />
+            </div>
           </div>
 
           {/* RIGHT: Summary Panel */}
@@ -357,6 +506,19 @@ export default function ComparePage() {
                 </div>
               </div>
             )}
+
+            {/* Cost Summary */}
+            {isLoading || !pathwayCosts || !primaryResult || !configuredResult ? (
+              <Skeleton className="h-20 w-full rounded-lg" />
+            ) : (
+              <div className="p-4 bg-[#142814] border border-[#1F3321] rounded-lg">
+                <CostSummary 
+                  costs={pathwayCosts}
+                  co2eSaved={Math.max(0, (primaryResult.totalGwp - configuredResult.totalGwp) * 1000)}
+                  isCompact={true}
+                />
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
@@ -389,7 +551,15 @@ export default function ComparePage() {
               </CardContent>
             </Card>
 
-      
+            {/* Cost Analysis */}
+            {isLoading || !pathwayCosts || !primaryResult || !configuredResult ? (
+              <Skeleton className="h-80 w-full" />
+            ) : (
+              <CostAnalysisCard 
+                costs={pathwayCosts}
+                co2eSaved={Math.max(0, (primaryResult.totalGwp - configuredResult.totalGwp) * 1000)}
+              />
+            )}
 
           </div>
         </div>

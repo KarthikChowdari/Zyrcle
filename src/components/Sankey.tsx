@@ -9,6 +9,10 @@ interface ProjectConfig {
   gridEmissions: number
   transportDistance: number
   recyclingRate: number
+  energyConsumption?: number
+  smeltingEnergy?: number
+  waterUsage?: number
+  wasteGeneration?: number
 }
 
 interface LcaResult {

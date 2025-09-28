@@ -45,6 +45,10 @@ interface ProjectData {
     gridEmissions_gCO2_per_kWh: number | null;
     transportDistance_km: number | null;
     end_of_life_recycling_rate: number | null;
+    energyConsumption: number | null;
+    smeltingEnergy: number | null;
+    waterUsage: number | null;
+    wasteGeneration: number | null;
     lciParameters: LCIParameter[];
 }
 interface ImputationMeta {
@@ -91,6 +95,10 @@ export default function CustomProjectPage({ params }: { params: { id: string } }
         gridEmissions_gCO2_per_kWh: 450,
         transportDistance_km: 500,
         end_of_life_recycling_rate: null,
+        energyConsumption: 15.2,
+        smeltingEnergy: 8.7,
+        waterUsage: 2.3,
+        wasteGeneration: 0.15,
         lciParameters: [
             {
                 name: "Energy Consumption",
@@ -237,8 +245,12 @@ export default function CustomProjectPage({ params }: { params: { id: string } }
                                     gridEmissions_gCO2_per_kWh: { label: "Grid Emissions", unit: "gCO2/kWh" },
                                     transportDistance_km: { label: "Transport Distance", unit: "km" },
                                     end_of_life_recycling_rate: { label: "End-of-Life Recycling Rate", unit: "%" },
+                                    energyConsumption: { label: "Energy Consumption", unit: "kWh/kg" },
+                                    smeltingEnergy: { label: "Smelting Energy", unit: "kWh/kg" },
+                                    waterUsage: { label: "Water Usage", unit: "L/kg" },
+                                    wasteGeneration: { label: "Waste Generation", unit: "kg/kg" },
                                 }).map(([key, { label, unit }]) => {
-                                    const fieldKey = key as keyof Pick<ProjectData, 'recycledContent' | 'gridEmissions_gCO2_per_kWh' | 'transportDistance_km' | 'end_of_life_recycling_rate'>;
+                                    const fieldKey = key as keyof Pick<ProjectData, 'recycledContent' | 'gridEmissions_gCO2_per_kWh' | 'transportDistance_km' | 'end_of_life_recycling_rate' | 'energyConsumption' | 'smeltingEnergy' | 'waterUsage' | 'wasteGeneration'>;
                                     const imputation = getImputationForField(fieldKey);
                                     const fieldValue = project[fieldKey];
                                     return (

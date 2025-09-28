@@ -26,6 +26,10 @@ interface QuickCompareInput {
     gridEmissions: number;
     transportDistance: number;
     recyclingRate: number;
+    energyConsumption?: number;
+    smeltingEnergy?: number;
+    waterUsage?: number;
+    wasteGeneration?: number;
 }
 
 interface CustomProjectInput {
@@ -38,11 +42,15 @@ interface CustomProjectInput {
     gridEmissions_gCO2_per_kWh?: number | null;
     transportDistance_km?: number | null;
     end_of_life_recycling_rate?: number | null;
+    energyConsumption?: number | null;
+    smeltingEnergy?: number | null;
+    waterUsage?: number | null;
+    wasteGeneration?: number | null;
 }
 
 interface LcaResult {
     totalGwp: number;
-    gwpBreakdown: { materialProduction: number; transport: number; gridEnergy: number; };
+    gwpBreakdown: { materialProduction: number; transport: number; gridEnergy: number; environmental?: number; };
     totalEnergy: number;
     circularityScore: number;
 }
@@ -54,28 +62,66 @@ function calculateQuickCompareLCA(input: QuickCompareInput): LcaResult {
     const primaryProcess = lciAluminiumData.processes.find(p => p.process_id === "AL_INGOT_PRIMARY_ELCD_V1");
     const recycledProcess = lciAluminiumData.processes.find(p => p.process_id === "AL_INGOT_RECYCLED_ELCD_V1");
     if (!primaryProcess || !recycledProcess) throw new Error("Core Aluminium LCI data missing.");
+    
     const recycledRatio = input.recycledContent / 100;
     const primaryRatio = 1 - recycledRatio;
+    
+    // Use new parameters if provided, otherwise use defaults or calculated values
+    const energyConsumption = input.energyConsumption ?? 15.2;
+    const smeltingEnergy = input.smeltingEnergy ?? 8.7;
+    const waterUsage = input.waterUsage ?? 2.3;
+    const wasteGeneration = input.wasteGeneration ?? 0.15;
+    
     const predictedEnergy = (modelCoefficients.coefficients.Aluminium.slope * input.recycledContent) + modelCoefficients.coefficients.Aluminium.intercept;
-    const materialGwp = (primaryRatio * primaryProcess.gCO2_per_kg) + (recycledRatio * recycledProcess.gCO2_per_kg);
+    
+    // Enhanced material GWP calculation including smelting energy
+    const baseMaterialGwp = (primaryRatio * primaryProcess.gCO2_per_kg) + (recycledRatio * recycledProcess.gCO2_per_kg);
+    const smeltingGwp = smeltingEnergy * input.gridEmissions * 0.5; // Smelting energy impact
+    const materialGwp = baseMaterialGwp + smeltingGwp;
+    
     const transportGwp = ((primaryRatio * primaryProcess.transport_gCO2_per_kg) + (recycledRatio * recycledProcess.transport_gCO2_per_kg)) * (input.transportDistance / 500);
-    const gridGwp = predictedEnergy * input.gridEmissions;
-    const totalGwp = (materialGwp + transportGwp + gridGwp) / 1000;
-    const circularityScore = 100 * (0.4 * recycledRatio + 0.3 * (input.recyclingRate / 100) + 0.2 * 0.3 + 0.1 * 0.95);
+    
+    // Enhanced grid GWP including energy consumption
+    const totalEnergyConsumption = predictedEnergy + energyConsumption;
+    const gridGwp = totalEnergyConsumption * input.gridEmissions;
+    
+    // Water and waste impact on GWP (small multipliers)
+    const waterImpact = waterUsage * 50; // 50 gCO2 per L/kg water usage
+    const wasteImpact = wasteGeneration * 200; // 200 gCO2 per kg/kg waste generation
+    
+    const totalGwp = (materialGwp + transportGwp + gridGwp + waterImpact + wasteImpact) / 1000;
+    
+    // Enhanced circularity score calculation including new parameters
+    const wasteEfficiency = Math.max(0, (1 - wasteGeneration) * 100) / 100;
+    const waterEfficiency = Math.max(0, (10 - waterUsage) / 10);
+    const energyEfficiency = Math.max(0, (50 - energyConsumption) / 50);
+    
+    const circularityScore = 100 * (
+        0.3 * recycledRatio + 
+        0.25 * (input.recyclingRate / 100) + 
+        0.15 * wasteEfficiency +
+        0.15 * waterEfficiency +
+        0.1 * energyEfficiency +
+        0.05 * 0.95  // baseline sustainability factor
+    );
+    
+    const environmentalImpact = (waterImpact + wasteImpact) / 1000;
+    
     return {
         totalGwp: parseFloat(totalGwp.toFixed(3)),
         gwpBreakdown: {
             materialProduction: parseFloat((materialGwp / 1000).toFixed(3)),
             transport: parseFloat((transportGwp / 1000).toFixed(3)),
             gridEnergy: parseFloat((gridGwp / 1000).toFixed(3)),
+            environmental: parseFloat(environmentalImpact.toFixed(3)),
         },
-        totalEnergy: parseFloat(predictedEnergy.toFixed(3)),
-        circularityScore: parseFloat(circularityScore.toFixed(1)),
+        totalEnergy: parseFloat(totalEnergyConsumption.toFixed(3)),
+        circularityScore: parseFloat(Math.min(100, circularityScore).toFixed(1)),
     };
 }
 
 function calculateCustomProjectLCA(project: CustomProjectInput): LcaResult {
-    const { material, product_type, recycledContent, gridEmissions_gCO2_per_kWh, transportDistance_km, end_of_life_recycling_rate, mass_kg } = project;
+    const { material, product_type, recycledContent, gridEmissions_gCO2_per_kWh, transportDistance_km, end_of_life_recycling_rate, mass_kg, energyConsumption, smeltingEnergy, waterUsage, wasteGeneration } = project;
     const lciData = material === 'Aluminium' ? lciAluminiumData : lciCopperData;
     const primaryProcessId = material === 'Aluminium' ? "AL_INGOT_PRIMARY_ELCD_V1" : "CU_CATHODE_PRIMARY_V1";
     const recycledProcessId = material === 'Aluminium' ? "AL_INGOT_RECYCLED_ELCD_V1" : "CU_CATHODE_RECYCLED_V1";
@@ -88,23 +134,56 @@ function calculateCustomProjectLCA(project: CustomProjectInput): LcaResult {
     const safeGridEmissions = gridEmissions_gCO2_per_kWh ?? 450;
     const safeTransportDistance = transportDistance_km ?? 500;
     const safeEolRecyclingRate = end_of_life_recycling_rate ?? 60;
+    
+    // Safe defaults for new parameters
+    const safeEnergyConsumption = energyConsumption ?? 15.2;
+    const safeSmeltingEnergy = smeltingEnergy ?? 8.7;
+    const safeWaterUsage = waterUsage ?? 2.3;
+    const safeWasteGeneration = wasteGeneration ?? 0.15;
+    
     const recycledRatio = safeRecycledContent / 100;
     const primaryRatio = 1 - recycledRatio;
 
     const ingotEnergy = (primaryRatio * primaryProcess.energy_kWh_per_kg) + (recycledRatio * recycledProcess.energy_kWh_per_kg);
-    const totalManufacturingEnergy = ingotEnergy * modifier.manufacturingEnergyFactor;
-    const materialGwp = ((primaryRatio * primaryProcess.gCO2_per_kg) + (recycledRatio * recycledProcess.gCO2_per_kg)) * mass_kg;
+    const totalManufacturingEnergy = (ingotEnergy + safeEnergyConsumption + safeSmeltingEnergy) * modifier.manufacturingEnergyFactor;
+    
+    // Enhanced material GWP calculation
+    const baseMaterialGwp = ((primaryRatio * primaryProcess.gCO2_per_kg) + (recycledRatio * recycledProcess.gCO2_per_kg)) * mass_kg;
+    const smeltingGwp = safeSmeltingEnergy * safeGridEmissions * mass_kg * 0.5;
+    const materialGwp = baseMaterialGwp + smeltingGwp;
+    
     const transportGwp = ((primaryRatio * primaryProcess.transport_gCO2_per_kg) + (recycledRatio * recycledProcess.transport_gCO2_per_kg)) * (safeTransportDistance / 500) * mass_kg;
     const gridGwp = totalManufacturingEnergy * safeGridEmissions * mass_kg;
-    const totalGwp = (materialGwp + transportGwp + gridGwp) / 1000;
-    const circularityScore = 100 * (0.4 * recycledRatio + 0.3 * (safeEolRecyclingRate / 100) / modifier.wasteFactor + 0.2 * 0.3 + 0.1 * 0.95);
+    
+    // Water and waste impact
+    const waterImpact = safeWaterUsage * 50 * mass_kg;
+    const wasteImpact = safeWasteGeneration * 200 * mass_kg;
+    
+    const totalGwp = (materialGwp + transportGwp + gridGwp + waterImpact + wasteImpact) / 1000;
+    
+    // Enhanced circularity score calculation
+    const wasteEfficiency = Math.max(0, (1 - safeWasteGeneration) * 100) / 100;
+    const waterEfficiency = Math.max(0, (10 - safeWaterUsage) / 10);
+    const energyEfficiency = Math.max(0, (50 - safeEnergyConsumption) / 50);
+    
+    const circularityScore = 100 * (
+        0.3 * recycledRatio + 
+        0.25 * (safeEolRecyclingRate / 100) / modifier.wasteFactor +
+        0.15 * wasteEfficiency +
+        0.15 * waterEfficiency +
+        0.1 * energyEfficiency +
+        0.05 * 0.95
+    );
 
+    const environmentalImpact = (waterImpact + wasteImpact) / 1000;
+    
     return {
         totalGwp: parseFloat(totalGwp.toFixed(3)),
         gwpBreakdown: {
             materialProduction: parseFloat((materialGwp / 1000).toFixed(3)),
             transport: parseFloat((transportGwp / 1000).toFixed(3)),
             gridEnergy: parseFloat((gridGwp / 1000).toFixed(3)),
+            environmental: parseFloat(environmentalImpact.toFixed(3)),
         },
         totalEnergy: parseFloat((totalManufacturingEnergy * mass_kg).toFixed(3)),
         circularityScore: parseFloat(circularityScore.toFixed(1)),
