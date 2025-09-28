@@ -20,6 +20,9 @@ import {
 } from "@/components/ui/navigation-menu";
 import { BarChart3, FileText, Zap } from "lucide-react";
 import BasicUserMenu from "@/components/BasicUserMenu";
+import { ShineBorder } from "@/components/ui/shine-border";
+import { Meteors } from "@/components/ui/meteors";
+import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
 
 export default function HomePage() {
   // Generate Report is now a full feature - no need for handler
@@ -48,6 +51,7 @@ export default function HomePage() {
       icon: (
         <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-5 group-hover:bg-green-200 transition-colors">
           <Zap className="w-8 h-8 text-green-600" />
+
         </div>
       ),
       list: [
@@ -190,16 +194,14 @@ export default function HomePage() {
       {/* Card Section */}
 
       <section className="relative z-10 bg-[#f8f3e6] text-slate-900 py-24">
+        <Meteors />
         <div className="max-w-7xl mx-auto px-6">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold text-center mb-16"
-          >
-            Explore Our Features
-          </motion.h2>
+        <motion.div className="relative mx-4 my-4 flex flex-col items-center justify-center gap-4 text-center sm:mx-0 sm:mb-0 sm:flex-row p-10">
+        <LayoutTextFlip
+          words={["Explore", "Use"]}
+          text=" Our Features"
+          />
+      </motion.div>  
 
           <div className="grid md:grid-cols-3 gap-10">
             {cards.map((card, i) => (
@@ -211,8 +213,9 @@ export default function HomePage() {
                 viewport={{ once: true }}
               >
                 <Card
-                  className="group bg-white border-2 border-slate-200 shadow-md hover:shadow-xl hover:border-slate-300 transition-all duration-300 rounded-2xl h-[440px] flex flex-col cursor-pointer"
+                  className="group bg-white border-2 border-slate-200 shadow-md hover:shadow-xl hover:border-slate-300 transition-all duration-300 rounded-2xl h-[440px] relative flex flex-col cursor-pointer"
                 >
+                  <ShineBorder shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]} />
                   {card.link ? (
                     <Link href={card.link} className="h-full flex flex-col">
                       <CardHeader className="text-center pt-8">
