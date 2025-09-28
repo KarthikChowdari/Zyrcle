@@ -36,6 +36,10 @@ import { ImputedBadge } from "@/components/ImputedBadge"
 import { CostAnalysisCard, CostSummary } from "@/components/CostAnalysis"
 import { calculatePathwayCosts, PathwayCosts } from "@/lib/cost-calculations"
 import {  Recycle, Battery, Truck, RefreshCcw, Zap, Flame, Droplets, Trash2 } from "lucide-react"
+import { AuroraBackground } from "@/components/ui/aurora-background"
+import { Meteors } from "@/components/ui/meteors"
+// import { AuroraBackground } from "../ui/aurora-background";
+
 
 interface ProjectConfig {
   recycledContent: number
@@ -106,6 +110,8 @@ const lciParameters = [
 ];
 
 export default function ComparePage() {
+  
+  
   const { user } = useAuth()
   const supabase = createSupabaseClientComponent()
   const [config, setConfig] = useState<ProjectConfig>({
@@ -248,8 +254,11 @@ export default function ComparePage() {
   }
 
   return (
+    
     <ProtectedPage>
+      
       <div className="min-h-screen bg-[#f8f3e6]">
+        
       {/* Header */}
       <header className="border-b bg-[#f8f3e6] print:hidden">
         <div className="container mx-auto px-4 py-4">
@@ -592,5 +601,7 @@ export default function ComparePage() {
       </div>
     </div>
     </ProtectedPage>
+  
   )
+  
 }
